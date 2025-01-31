@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include<QFileDialog>
 #include<QMessageBox>
+#include<QSqlQueryModel>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -26,23 +27,43 @@ MainWindow::~MainWindow()
  }
 void MainWindow::do_currentRowChanged(const QModelIndex &current,const QModelIndex &previous)
 {
-    Q_UNUSED(previous);
-    ui->actDelete->setEnabled(current.isValid());
-    ui->actClearPic->setEnabled(current.isValid());
-    ui->actSetPic->setEnabled(current.isValid());
-    if(!current.isValid()) return;
-    dataMapper->setCurrentIndex(current.row());
-    int curRecNo=current.row();
-    QSqlRecord curRec=tabModel->record(curRecNo);
-    if(curRec.isNull("Photo"))
-        ui->label->clear();
+     Q_UNUSED(previous);
+    if(!current.isValid())
+     {
+         ui->labelPic->clear();
+        ui->plainTextEdit->clear();
+     }
+    dataMapper->setCurrentModelIndex(current);
+    bool first=(current.row()==0);
+    bool last=(current.row()==qryModel->rowCount()-1);
+    ui->actFirst->setEnabled(!first);
+    ui->actPrevious->setEnabled(!first);
+    ui->actNext->setEnabled(!last);
+    ui->actLast->setEnabled(!last);
+
+    int curRecNo=selectModel->currentIndex().row();
+    QSqlRecord curRec=qryModel->record(curRecNo);
+    int empNo=curRec.value("EmpNo").toInt();
+
+
+    QSqlQuery query;
+    query.prepare("select Memo, Photo from employee where EmpNo= :ID");
+    query.bindValue(":ID",empNo);
+    query.exec();
+    query.first();
+    QVariant va=query.value("Photo");
+    if(!va.isValid())
+        ui->labelPic->clear();
     else
     {
-        QByteArray data=curRec.value("Photo").toByteArray();
+        QByteArray data=va.toByteArray();
         QPixmap pic;
         pic.loadFromData(data);
-        ui->labelPic->setPixmap(pic.scaledToWidth(ui->labelPic->size().width()));
+        ui->labelPic->setPixmap(pic.scaledToWidth(ui->labelPic->size().width() ));
     }
+    QVariant va2=query.value("Memo");
+    ui->plainTextEdit->setPlainText(va2.toString());
+
 }
 void MainWindow::on_actOpenDB_triggered()
 {
@@ -52,7 +73,8 @@ void MainWindow::on_actOpenDB_triggered()
     DB=QSqlDatabase::addDatabase("QSQLITE");
     DB.setDatabaseName(aFile);
     if(DB.open())
-        openTable();
+        selectData();
+        //openTable();
     else
         QMessageBox::warning(this,"错误","打开数据库失败");
 }
@@ -60,6 +82,59 @@ void MainWindow::on_actOpenDB_triggered()
 void MainWindow::showRecordCount()
 {
     ui->statusbar->showMessage(QString("记录条数:%1").arg(tabModel->rowCount()));
+}
+void MainWindow::selectData()
+{
+    QString str="SELECT empNo,Name,Gender,Birthday,Province,department,"
+                  "Salary From employee ORDER BY empNo";
+    qryModel =new QSqlQueryModel(this);
+    qryModel->setQuery(str);
+    if(qryModel->lastError().isValid())
+    {
+        QMessageBox::critical(this,"错误","数据表查询错误,错误信息\n"
+                              +qryModel->lastError().text());
+        return;
+    }
+    ui->statusbar->showMessage(QString("记录条数：%1").arg(qryModel->rowCount()));
+    QSqlRecord rec=qryModel->record();
+    qryModel->setHeaderData(rec.indexOf("empNo"),Qt::Horizontal,"工号");
+    qryModel->setHeaderData(rec.indexOf("Name"),Qt::Horizontal,"姓名");
+    qryModel->setHeaderData(rec.indexOf("Gender"),Qt::Horizontal,"性别");
+    qryModel->setHeaderData(rec.indexOf("Birthday"),Qt::Horizontal,"出生日期");
+    qryModel->setHeaderData(rec.indexOf("Province"),Qt::Horizontal,"省份");
+    qryModel->setHeaderData(rec.indexOf("Department"),Qt::Horizontal,"部门");
+    qryModel->setHeaderData(rec.indexOf("Salary"),Qt::Horizontal,"工资");
+    //创建数据模型
+    selectModel=new QItemSelectionModel(qryModel,this);
+    connect(selectModel,&QItemSelectionModel::currentRowChanged,this,&MainWindow::do_currentRowChanged);
+    ui->tableView->setModel(qryModel);
+    ui->tableView->setSelectionModel(selectModel);
+
+    // //字段与widget映射
+    dataMapper=new QDataWidgetMapper(this);
+    dataMapper->setModel(qryModel);
+    dataMapper->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
+    dataMapper->addMapping(ui->spinBoxEmpNo,rec.indexOf("empNo"));
+    dataMapper->addMapping(ui->lineEditName,rec.indexOf("Name"));
+    dataMapper->addMapping(ui->comboBoxSex,rec.indexOf("Gender"));
+    dataMapper->addMapping(ui->dateTimeEditBirth,rec.indexOf("Birthday"));
+    dataMapper->addMapping(ui->comboBoxProvince,rec.indexOf("Province"));
+    dataMapper->addMapping(ui->spinBoxSalary,rec.indexOf("Salary"));
+    dataMapper->addMapping(ui->comboBoxDep,rec.indexOf("Department"));
+
+    dataMapper->toFirst();
+
+
+     ui->actOpenDB->setEnabled(false);
+
+
+}
+void MainWindow::refreshTableView()
+{
+    int index=dataMapper->currentIndex();
+    QModelIndex curIndex=qryModel->index(index,1);
+    selectModel->clearSelection();
+    selectModel->setCurrentIndex(curIndex,QItemSelectionModel::Select);
 }
 void MainWindow::openTable()
 {
@@ -279,5 +354,33 @@ void MainWindow::on_radioButtonMWanALL_clicked()
 {
     tabModel->setFilter("");
     ui->statusbar->showMessage(QString("记录条数：%1").arg(tabModel->rowCount()));
+}
+
+
+void MainWindow::on_actFirst_triggered()
+{
+    dataMapper->toFirst();
+     refreshTableView();
+}
+
+
+void MainWindow::on_actPrevious_triggered()
+{
+    dataMapper->toPrevious();
+     refreshTableView();
+}
+
+
+void MainWindow::on_actNext_triggered()
+{
+    dataMapper->toNext();
+     refreshTableView();
+}
+
+
+void MainWindow::on_actLast_triggered()
+{
+    dataMapper->toLast();
+    refreshTableView();
 }
 

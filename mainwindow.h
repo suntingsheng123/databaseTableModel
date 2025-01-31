@@ -15,14 +15,16 @@ class MainWindow : public QMainWindow
 private:
     QSqlDatabase DB;//数据库连接
     QSqlTableModel *tabModel;//数据模型
+    QSqlQueryModel *qryModel;
     QItemSelectionModel *selectModel;//选择模型
     QDataWidgetMapper *dataMapper;//数据映射
 
     TComboBoxDelegate delegateSex;//自定义数据代理 性别
     TComboBoxDelegate delegateDepart;//自定义数据代理 部门
-
+    void selectData();
     void openTable();
     void showRecordCount();
+    void refreshTableView();
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -60,6 +62,14 @@ private slots:
     void on_radioButtonWoman_clicked();
 
     void on_radioButtonMWanALL_clicked();
+
+    void on_actFirst_triggered();
+
+    void on_actPrevious_triggered();
+
+    void on_actNext_triggered();
+
+    void on_actLast_triggered();
 
 private:
     Ui::MainWindow *ui;

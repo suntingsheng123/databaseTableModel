@@ -411,8 +411,12 @@
    <addaction name="separator"/>
    <addaction name="actSave"/>
    <addaction name="actCancel"/>
-   <addaction name="actQuit"/>
    <addaction name="separator"/>
+   <addaction name="actFirst"/>
+   <addaction name="actPrevious"/>
+   <addaction name="actNext"/>
+   <addaction name="actLast"/>
+   <addaction name="actQuit"/>
   </widget>
   <action name="actOpenDB">
    <property name="icon">
@@ -553,6 +557,66 @@
    </property>
    <property name="text">
     <string>取消</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actFirst">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/images/images/308.bmp</normaloff>:/images/images/308.bmp</iconset>
+   </property>
+   <property name="text">
+    <string>首记录</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actPrevious">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/images/images/310.bmp</normaloff>:/images/images/310.bmp</iconset>
+   </property>
+   <property name="text">
+    <string>前一条</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actNext">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/images/images/312.bmp</normaloff>:/images/images/312.bmp</iconset>
+   </property>
+   <property name="text">
+    <string>后一条</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actLast">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/images/images/314.bmp</normaloff>:/images/images/314.bmp</iconset>
+   </property>
+   <property name="text">
+    <string>尾记录</string>
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>
